@@ -61,7 +61,7 @@ Charts and visualizations are implemented using **ApexCharts**, with animated da
 
 ## 🔐 Authentication & Security
 
-Invoice Ready implements multiple layers of application security.
+AiInvo implements multiple layers of application security.
 
 ### Authentication
 
@@ -117,7 +117,7 @@ This keeps request contracts consistent across the application.
 
 ## 🏗️ Architecture
 
-Invoice Ready follows a modular, feature-based architecture.
+AiInvo follows a modular, feature-based architecture.
 
 ```text
 invoice-ready/
