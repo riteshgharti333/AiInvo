@@ -1,4 +1,8 @@
-import type { ParsedInvoiceData, ParsedInvoiceItem } from "./invoiceAI.types";
+import type {
+  ParsedInvoiceData,
+  ParsedInvoiceItem,
+  DocumentType,
+} from "./invoiceAI.types";
 import { AppError } from "../../common/errors/AppError";
 import { HTTP_STATUS } from "../../common/constants/httpStatus";
 
@@ -33,6 +37,7 @@ export class InvoiceAIParser {
   async parseInvoiceText(
     text: string,
     history: ConversationTurn[] = [],
+    documentType: DocumentType = "INVOICE",
   ): Promise<ParsedInvoiceData> {
     const trimmed = text.trim();
 
@@ -50,7 +55,7 @@ export class InvoiceAIParser {
       });
     }
 
-    const prompt = this.buildPrompt(trimmed);
+    const prompt = this.buildPrompt(trimmed, history, documentType);
 
     try {
       const raw = await this.callGroq(prompt, history);
@@ -166,7 +171,15 @@ export class InvoiceAIParser {
       clearTimeout(timeout);
     }
   }
-  private buildPrompt(text: string, history: ConversationTurn[] = []): string {
+
+  private buildPrompt(
+    text: string,
+    history: ConversationTurn[] = [],
+    documentType: DocumentType = "INVOICE",
+  ): string {
+    const noun = documentType === "QUOTATION" ? "quotation" : "invoice";
+    const nounUpper = noun.toUpperCase();
+
     const historyText =
       history.length > 0
         ? history.map((t) => `${t.role}: ${t.content}`).join("\n")
@@ -177,14 +190,14 @@ ${historyText}
 
 Latest user message: "${text}"
 
-Your job: Determine if this is a NEW invoice or MODIFICATION of existing one.
+Your job: Determine if this is a NEW ${noun} or MODIFICATION of existing one.
 
-NEW INVOICE if:
+NEW ${nounUpper} if:
 - Latest message mentions a customer name DIFFERENT from what was established before
 - Latest message clearly starts fresh
 
 MODIFICATION if:
-- Latest message refers to existing invoice (add discount, change quantity, etc.)
+- Latest message refers to existing ${noun} (add discount, change quantity, etc.)
 - Latest message has SAME customer as before
 - Latest message is partial (like "50%", "10k off")
 
@@ -193,7 +206,7 @@ If MODIFICATION:
 - Only update what user mentioned
 - Return FULL item list
 
-If NEW INVOICE:
+If NEW ${nounUpper}:
 - Ignore previous conversation entirely
 - Start fresh with new customer and items
 
@@ -209,7 +222,7 @@ Return ONLY JSON:
   "termsConditions": ""
 }
 
-If NOT invoice related:
+If NOT ${noun} related:
 {
   "error": true,
   "errorType": "greeting|vague|gibberish|question|unrelated",

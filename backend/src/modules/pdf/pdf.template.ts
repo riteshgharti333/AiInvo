@@ -44,7 +44,7 @@ export function generateInvoicePdf(data: InvoicePdfData, type: PdfType = "invoic
         .fontSize(32)
         .font("Helvetica-Bold")
         .fillColor(white)
-        .text("Invoice Ready", margin, 30);
+        .text("AiInvo", margin, 30);
 
       // Tagline
       doc
@@ -287,7 +287,7 @@ export function generateInvoicePdf(data: InvoicePdfData, type: PdfType = "invoic
         .fontSize(8)
         .font("Helvetica")
         .fillColor(primary)
-        .text("Invoice Ready", margin, footerY + 12)
+        .text("AiInvo", margin, footerY + 12)
         .fillColor(gray)
         .text("Smart Invoicing for Modern Businesses", margin, footerY + 24);
 

@@ -117,19 +117,22 @@ export function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Left - Brand + Greeting */}
           <div className="flex items-center gap-6">
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="flex flex-col">
-                <span className="text-3xl font-extrabold tracking-tight leading-tight bg-gradient-to-r from-brand via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Invoice Ready
-                </span>
-                <span className="text-xs text-text-muted font-medium">
-                  Smart invoicing for modern businesses
-                </span>
-              </div>
+            <div className="hidden sm:flex items-center">
+              <img
+                src="/logo.webp"
+                alt="AiInvo - AI-powered invoicing, simplified"
+                className="h-16 w-auto object-contain"
+              />
             </div>
-            <span className="sm:hidden text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand to-purple-600 bg-clip-text text-transparent">
-              IR
-            </span>
+
+            {/* Mobile logo */}
+            <div className="sm:hidden">
+              <img
+                src="/logo-icon.png"
+                alt="AiInvo"
+                className="h-9 w-9 object-contain"
+              />
+            </div>
           </div>
 
           {/* Right - Actions */}

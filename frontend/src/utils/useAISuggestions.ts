@@ -5,10 +5,30 @@ import type {
   ServiceSuggestion,
 } from "@invoice/shared/types";
 import type { ChatMessageData } from "../components/layout/AIChatMessage";
-import { useInvoiceAIPreview } from "../features/hooks/useInvoiceAI";
+import {
+  useInvoiceAIPreview,
+  useQuotationAIPreview,
+} from "../features/hooks/useInvoiceAI";
 import type { ConversationTurn } from "../features/api/invoiceAI.api";
 
 type ChatErrorData = NonNullable<ChatMessageData["error"]>;
+export type DocumentType = "INVOICE" | "QUOTATION";
+
+const QUOTATION_KEYWORDS = [
+  "quote",
+  "quotation",
+  "estimate",
+  "proposal",
+  "qtn",
+  "qte",
+];
+
+export function detectDocumentType(text: string): DocumentType {
+  const lower = text.toLowerCase();
+  return QUOTATION_KEYWORDS.some((kw) => lower.includes(kw))
+    ? "QUOTATION"
+    : "INVOICE";
+}
 
 function buildErrorData(error: any): ChatErrorData {
   const details = error?.response?.data?.details;
@@ -57,7 +77,9 @@ export function useInvoiceAIChat() {
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [context, setContext] = useState<InvoiceContext>({});
   const [lastUserText, setLastUserText] = useState("");
-  const previewMutation = useInvoiceAIPreview();
+
+  const invoicePreview = useInvoiceAIPreview();
+  const quotationPreview = useQuotationAIPreview();
 
   const addThinkingMessage = useCallback(() => {
     const id = crypto.randomUUID();
@@ -103,7 +125,7 @@ export function useInvoiceAIChat() {
           role: m.type === "user" ? ("user" as const) : ("assistant" as const),
           content:
             m.text ||
-            (m.preview ? "Invoice preview shown" : m.error?.message || ""),
+            (m.preview ? "Preview shown" : m.error?.message || ""),
         }));
     },
     [],
@@ -114,7 +136,11 @@ export function useInvoiceAIChat() {
       requestText: string,
       nextContext: InvoiceContext,
       displayText?: string,
+      forcedDocType?: DocumentType,
     ) => {
+      const documentType: DocumentType =
+        forcedDocType ?? detectDocumentType(requestText);
+
       const userMessage: ChatMessageData = {
         id: crypto.randomUUID(),
         type: "user",
@@ -127,15 +153,18 @@ export function useInvoiceAIChat() {
 
       const thinkingId = addThinkingMessage();
 
-      // Build history from previous messages
       const history = buildHistory(messages);
+
+      // Pick the right mutation based on detected document type
+      const previewMutation =
+        documentType === "QUOTATION" ? quotationPreview : invoicePreview;
 
       try {
         const result = await previewMutation.mutateAsync({
           text: requestText,
           context:
             Object.keys(nextContext).length > 0 ? nextContext : undefined,
-          history, // Send history!
+          history,
         });
 
         updateContextFromPreview(result.data);
@@ -143,14 +172,19 @@ export function useInvoiceAIChat() {
         resolveThinkingMessage(thinkingId, {
           preview: result.data,
           sourceText: requestText,
+          documentType,
         });
       } catch (error) {
-        resolveThinkingMessage(thinkingId, { error: buildErrorData(error) });
+        resolveThinkingMessage(thinkingId, {
+          error: buildErrorData(error),
+          documentType,
+        });
       }
     },
     [
       messages,
-      previewMutation,
+      invoicePreview,
+      quotationPreview,
       addThinkingMessage,
       resolveThinkingMessage,
       updateContextFromPreview,
@@ -160,9 +194,9 @@ export function useInvoiceAIChat() {
 
   const sendText = useCallback(
     (text: string) => {
-      // Check if this is a new invoice (has "for" + new name)
       const forMatch = text.match(/\bfor\s+([^,]+)/i);
       const newCustomerName = forMatch?.[1]?.trim();
+      const documentType = detectDocumentType(text);
 
       if (
         newCustomerName &&
@@ -170,10 +204,9 @@ export function useInvoiceAIChat() {
         newCustomerName.toLowerCase() !== context.customerName.toLowerCase()
       ) {
         setContext({});
-        runPreview(text, {});
+        runPreview(text, {}, undefined, documentType);
       } else {
-        // Same customer or modification
-        runPreview(text, context);
+        runPreview(text, context, undefined, documentType);
       }
     },
     [runPreview, context],
@@ -188,7 +221,9 @@ export function useInvoiceAIChat() {
       };
       setContext(updatedContext);
 
-      // Build full text preserving service and discount
+      // Preserve document type across selection
+      const documentType = detectDocumentType(lastUserText);
+
       let fullText = lastUserText;
 
       if (context.customerName) {
@@ -201,9 +236,14 @@ export function useInvoiceAIChat() {
       }
 
       if (!fullText) {
-        fullText = `make invoice for ${customer.name}`;
+        fullText =
+          documentType === "QUOTATION"
+            ? `make quote for ${customer.name}`
+            : `make invoice for ${customer.name}`;
         if (updatedContext.services?.length) {
-          fullText += `, ${updatedContext.services.map((s) => s.name).join(", ")}`;
+          fullText += `, ${updatedContext.services
+            .map((s) => s.name)
+            .join(", ")}`;
         }
         if (updatedContext.discount) {
           fullText += `, ${updatedContext.discount}% discount`;
@@ -214,6 +254,7 @@ export function useInvoiceAIChat() {
         fullText,
         updatedContext,
         `Selected customer: ${customer.name}`,
+        documentType,
       );
     },
     [context, lastUserText, runPreview],
@@ -241,8 +282,10 @@ export function useInvoiceAIChat() {
       const updatedContext: InvoiceContext = { ...context, services };
       setContext(updatedContext);
 
-      // Build FRESH text from context - NOT from lastUserText
-      let fullText = "make invoice";
+      const documentType = detectDocumentType(lastUserText);
+
+      let fullText =
+        documentType === "QUOTATION" ? "make quote" : "make invoice";
 
       if (updatedContext.customerName) {
         fullText += ` for ${updatedContext.customerName}`;
@@ -258,9 +301,10 @@ export function useInvoiceAIChat() {
         fullText,
         updatedContext,
         `Selected service: ${service.name}`,
+        documentType,
       );
     },
-    [context, runPreview],
+    [context, lastUserText, runPreview],
   );
 
   return {
@@ -270,6 +314,6 @@ export function useInvoiceAIChat() {
     sendText,
     selectCustomer,
     selectService,
-    isSelecting: previewMutation.isPending,
+    isSelecting: invoicePreview.isPending || quotationPreview.isPending,
   };
 }

@@ -73,10 +73,10 @@ export function getDueReminderTemplate(data: EmailTemplateData): {
           
           <p>If you have already made the payment, please ignore this email.</p>
           
-          <p>Best regards,<br>Invoice Ready Team</p>
+          <p>Best regards,<br>AiInvo Team</p>
         </div>
         <div class="footer">
-          <p>This is an automated reminder from Invoice Ready. Please do not reply to this email.</p>
+          <p>This is an automated reminder from AiInvo. Please do not reply to this email.</p>
         </div>
       </div>
     </body>
@@ -160,10 +160,10 @@ export function getOverdueTemplate(data: EmailTemplateData): {
           
           <p>If you have any questions, please contact us immediately.</p>
           
-          <p>Best regards,<br>Invoice Ready Team</p>
+          <p>Best regards,<br>AiInvo Team</p>
         </div>
         <div class="footer">
-          <p>This is an automated reminder from Invoice Ready. Please do not reply to this email.</p>
+          <p>This is an automated reminder from AiInvo. Please do not reply to this email.</p>
         </div>
       </div>
     </body>

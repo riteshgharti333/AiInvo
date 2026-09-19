@@ -31,7 +31,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="relative bg-brand overflow-hidden">
+   <footer className="relative bg-[#111827] overflow-hidden">
       {/* Animated Background Blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Large blob - top right */}
@@ -142,13 +142,15 @@ const Footer = () => {
           {/* Logo */}
           <motion.a
             href="#"
-            className="inline-flex items-center gap-3 group justify-center mb-2"
+            className="inline-flex items-center justify-center mb-4"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            <span className="text-2xl md:text-[28px] font-extrabold tracking-tight leading-none bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-              Invoice Ready
-            </span>
+            <img
+              src="/logo.webp"
+              alt="AiInvo - AI-powered invoicing"
+              className="w-auto h-12 md:h-16 object-contain"
+            />
           </motion.a>
 
           {/* Description */}
@@ -159,8 +161,8 @@ const Footer = () => {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="text-sm leading-relaxed mb-8 max-w-md mx-auto text-white/70"
           >
-            Smart invoicing solution for modern businesses. Manage invoices,
-            customers, and payments with ease.
+            Create professional invoices and quotations with AI. Simply describe
+            what you need in one prompt, and AiInvo does the rest.
           </motion.p>
 
           {/* Navigation Links */}
@@ -224,7 +226,7 @@ const Footer = () => {
             transition={{ duration: 0.4, delay: 0.4 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-2 text-xs text-white/50"
           >
-            <span>© {currentYear} Invoice Ready. All rights reserved.</span>
+            <span>© {currentYear} AiInvo. All rights reserved.</span>
             <span className="hidden sm:inline">·</span>
             <span className="inline-flex items-center gap-1">
               Made with

@@ -108,7 +108,7 @@ const About = () => {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-brand-light text-brand"
             >
               <HiLightningBolt className="w-4 h-4" />
-              <span>Why Invoice Ready</span>
+              <span>Why AiInvo</span>
             </motion.div>
 
             {/* Heading */}
@@ -206,7 +206,7 @@ const About = () => {
                     <div className="w-3 h-3 rounded-full bg-emerald-400" />
                   </div>
                   <span className="text-xs font-medium text-text-muted">
-                    Dashboard — Invoice Ready
+                    Dashboard — AiInvo
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

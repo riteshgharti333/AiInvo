@@ -13,8 +13,8 @@ import { invoiceAIController } from "../ai/invoiceAI.controller";
 const router = Router();
 
 // AI routes (must be before /:id routes)
-router.post("/generate", authMiddleware, invoiceAIController.generateInvoice);
-router.post("/test-parse", authMiddleware, invoiceAIController.testParse);
+// router.post("/generate", authMiddleware, invoiceAIController.generateInvoice);
+// router.post("/test-parse", authMiddleware, invoiceAIController.testParse);
 
 // Regular invoice routes
 router.get("/", invoiceController.getAllInvoices);

@@ -1,5 +1,7 @@
 import { ServiceSuggestion } from "./invoiceAI.suggestions";
 
+export type DocumentType = "INVOICE" | "QUOTATION";
+
 export interface ParsedInvoiceItem {
   serviceName: string;
   description?: string;

@@ -11,18 +11,29 @@ import type {
   MatchedService,
   GenerateInvoiceAIResponse,
   InvoiceContext,
+  DocumentType,
 } from "./invoiceAI.types";
 import { invoiceService } from "../invoice/invoice.service";
+import { quotationService } from "../quotation/quotation.service";
 import { invoiceAISuggestions } from "./invoiceAI.suggestions";
 
 export class InvoiceAIService {
+  // ─────────────────────────────────────────────────────────────
+  // PUBLIC — INVOICE
+  // ─────────────────────────────────────────────────────────────
+
   async generateInvoiceFromText(
     text: string,
     userId?: string,
     context?: InvoiceContext,
     history: ConversationTurn[] = [],
   ): Promise<GenerateInvoiceAIResponse> {
-    const prepared = await this.prepareInvoiceData(text, context, history);
+    const prepared = await this.prepareInvoiceData(
+      text,
+      context,
+      history,
+      "INVOICE",
+    );
 
     const { invoiceItems, warnings } = this.buildInvoiceItemsWithWarnings(
       prepared.mergedData,
@@ -42,28 +53,7 @@ export class InvoiceAIService {
     );
 
     return {
-      invoice: {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        status: invoice.status,
-        subtotal: Math.round(Number(invoice.subtotal) * 100) / 100,
-        discount: Math.round(Number(invoice.discount) * 100) / 100,
-        tax: Math.round(Number(invoice.tax) * 100) / 100,
-        total: Math.round(Number(invoice.total) * 100) / 100,
-        customer: {
-          id: invoice.customer.id,
-          name: invoice.customer.name,
-          email: invoice.customer.email,
-        },
-        items: invoice.items.map((item: any) => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: Math.round(Number(item.unitPrice) * 100) / 100,
-          discount: Math.round(Number(item.discount) * 100) / 100,
-          taxRate: Number(item.taxRate),
-          total: Math.round(Number(item.total) * 100) / 100,
-        })),
-      },
+      invoice: this.shapeDocumentResponse(invoice, "INVOICE"),
       warnings: [...prepared.customerResult.warnings, ...warnings],
     };
   }
@@ -74,7 +64,12 @@ export class InvoiceAIService {
     context?: InvoiceContext,
     history: ConversationTurn[] = [],
   ): Promise<GenerateInvoiceAIResponse> {
-    const prepared = await this.prepareInvoiceData(text, context, history);
+    const prepared = await this.prepareInvoiceData(
+      text,
+      context,
+      history,
+      "INVOICE",
+    );
 
     const { invoiceItems, warnings } = this.buildInvoiceItemsWithWarnings(
       prepared.mergedData,
@@ -83,10 +78,15 @@ export class InvoiceAIService {
 
     const totals = FinancialCalculations.calculateTotals(invoiceItems);
 
+    const itemTotals = invoiceItems.map(
+      (item) =>
+        Math.round(FinancialCalculations.calculateItemTotal(item) * 100) / 100,
+    );
+
     return {
       invoice: {
         id: "",
-        invoiceNumber: "",
+        invoiceNumber: "INV-PREVIEW",
         status: "DRAFT",
         subtotal: Math.round(totals.subtotal * 100) / 100,
         discount: Math.round(totals.discount * 100) / 100,
@@ -97,15 +97,13 @@ export class InvoiceAIService {
           name: prepared.customerResult.customer.name,
           email: prepared.customerResult.customer.email,
         },
-        items: invoiceItems.map((item: any) => ({
+        items: invoiceItems.map((item, i) => ({
           description: item.description,
           quantity: item.quantity,
           unitPrice: Math.round(Number(item.unitPrice) * 100) / 100,
           discount: Math.round(Number(item.discount) * 100) / 100,
           taxRate: Number(item.taxRate),
-          total:
-            Math.round(FinancialCalculations.calculateItemTotal(item) * 100) /
-            100,
+          total: itemTotals[i],
         })),
       },
       warnings: [...prepared.customerResult.warnings, ...warnings],
@@ -119,10 +117,11 @@ export class InvoiceAIService {
     history: ConversationTurn[] = [],
   ): Promise<ParsedInvoiceData> {
     const contextTurns = this.contextToHistoryTurns(context);
-    const parsedData = await invoiceAIParser.parseInvoiceText(text, [
-      ...contextTurns,
-      ...history,
-    ]);
+    const parsedData = await invoiceAIParser.parseInvoiceText(
+      text,
+      [...contextTurns, ...history],
+      "INVOICE",
+    );
     const mergedData = context
       ? this.mergeWithContext(parsedData, context)
       : parsedData;
@@ -131,10 +130,140 @@ export class InvoiceAIService {
     return mergedData;
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // PUBLIC — QUOTATION
+  // ─────────────────────────────────────────────────────────────
+
+  async generateQuotationFromText(
+    text: string,
+    userId?: string,
+    context?: InvoiceContext,
+    history: ConversationTurn[] = [],
+  ): Promise<GenerateInvoiceAIResponse> {
+    const prepared = await this.prepareInvoiceData(
+      text,
+      context,
+      history,
+      "QUOTATION",
+    );
+
+    const { invoiceItems, warnings } = this.buildInvoiceItemsWithWarnings(
+      prepared.mergedData,
+      prepared.matchedServices,
+    );
+
+    const quotation = await quotationService.createQuotation(
+      {
+        customerId: prepared.customerResult.customer.id,
+        issueDate: new Date().toISOString(),
+        expiryDate: prepared.mergedData.dueDate || undefined,
+        notes: prepared.mergedData.notes,
+        termsConditions: prepared.mergedData.termsConditions,
+        items: invoiceItems,
+      },
+      userId,
+    );
+
+    return {
+      invoice: this.shapeDocumentResponse(quotation, "QUOTATION"),
+      warnings: [...prepared.customerResult.warnings, ...warnings],
+    };
+  }
+
+  async previewQuotation(
+    text: string,
+    userId?: string,
+    context?: InvoiceContext,
+    history: ConversationTurn[] = [],
+  ): Promise<GenerateInvoiceAIResponse> {
+    const prepared = await this.prepareInvoiceData(
+      text,
+      context,
+      history,
+      "QUOTATION",
+    );
+
+    const { invoiceItems, warnings } = this.buildInvoiceItemsWithWarnings(
+      prepared.mergedData,
+      prepared.matchedServices,
+    );
+
+    const totals = FinancialCalculations.calculateTotals(invoiceItems);
+
+    const itemTotals = invoiceItems.map(
+      (item) =>
+        Math.round(FinancialCalculations.calculateItemTotal(item) * 100) / 100,
+    );
+
+    return {
+      invoice: {
+        id: "",
+        invoiceNumber: "QTN-PREVIEW",
+        status: "DRAFT",
+        subtotal: Math.round(totals.subtotal * 100) / 100,
+        discount: Math.round(totals.discount * 100) / 100,
+        tax: Math.round(totals.tax * 100) / 100,
+        total: Math.round(totals.total * 100) / 100,
+        customer: {
+          id: prepared.customerResult.customer.id,
+          name: prepared.customerResult.customer.name,
+          email: prepared.customerResult.customer.email,
+        },
+        items: invoiceItems.map((item, i) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: Math.round(Number(item.unitPrice) * 100) / 100,
+          discount: Math.round(Number(item.discount) * 100) / 100,
+          taxRate: Number(item.taxRate),
+          total: itemTotals[i],
+        })),
+      },
+      warnings: [...prepared.customerResult.warnings, ...warnings],
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // PRIVATE — SHARED
+  // ─────────────────────────────────────────────────────────────
+
+  private shapeDocumentResponse(
+    source: any,
+    documentType: DocumentType,
+  ): GenerateInvoiceAIResponse["invoice"] {
+    const numberLabel =
+      documentType === "QUOTATION"
+        ? source.quotationNumber ?? ""
+        : source.invoiceNumber ?? "";
+
+    return {
+      id: source.id,
+      invoiceNumber: numberLabel,
+      status: source.status,
+      subtotal: Math.round(Number(source.subtotal) * 100) / 100,
+      discount: Math.round(Number(source.discount) * 100) / 100,
+      tax: Math.round(Number(source.tax) * 100) / 100,
+      total: Math.round(Number(source.total) * 100) / 100,
+      customer: {
+        id: source.customer.id,
+        name: source.customer.name,
+        email: source.customer.email,
+      },
+      items: source.items.map((item: any) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: Math.round(Number(item.unitPrice) * 100) / 100,
+        discount: Math.round(Number(item.discount) * 100) / 100,
+        taxRate: Number(item.taxRate),
+        total: Math.round(Number(item.total) * 100) / 100,
+      })),
+    };
+  }
+
   private async prepareInvoiceData(
     text: string,
     context: InvoiceContext | undefined,
     history: ConversationTurn[],
+    documentType: DocumentType = "INVOICE",
   ): Promise<{
     mergedData: ParsedInvoiceData;
     customerResult: CustomerMatchResult;
@@ -146,10 +275,11 @@ export class InvoiceAIService {
     // Combine: context snapshot + actual conversation history
     const fullHistory = [...contextTurns, ...history];
 
-    // Pass full history to parser
+    // Pass full history + document type to parser
     const parsedData = await invoiceAIParser.parseInvoiceText(
       text,
       fullHistory,
+      documentType,
     );
 
     const mergedData = context

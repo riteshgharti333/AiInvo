@@ -6,7 +6,7 @@ import {
   TbCheck,
   TbSparkles,
   TbPackage,
-  TbX,
+  TbFileDescription,
 } from "react-icons/tb";
 import type {
   InvoiceAIPreview,
@@ -14,7 +14,10 @@ import type {
   ServiceSuggestion,
   InvoiceContext,
 } from "@invoice/shared/types";
-import { useInvoiceAIGenerate } from "../../features/hooks/useInvoiceAI";
+import {
+  useInvoiceAIGenerate,
+  useQuotationAIGenerate,
+} from "../../features/hooks/useInvoiceAI";
 import { useNavigate } from "react-router-dom";
 import { toast } from "../../utils/toast";
 import { useState } from "react";
@@ -26,12 +29,15 @@ export type ChatErrorType =
   | "SERVICE_NOT_FOUND"
   | "INVALID_INPUT";
 
+export type DocumentType = "INVOICE" | "QUOTATION";
+
 export interface ChatMessageData {
   id: string;
   type: "user" | "ai";
   text: string;
   sourceText?: string;
   preview?: InvoiceAIPreview;
+  documentType?: DocumentType;
   error?: {
     message: string;
     type: ChatErrorType;
@@ -61,8 +67,14 @@ export function AIChatMessage({
   onClose,
 }: AIChatMessageProps) {
   const navigate = useNavigate();
-  const generateMutation = useInvoiceAIGenerate();
+
+  const isQuotation = message.documentType === "QUOTATION";
+
+  const invoiceGenerate = useInvoiceAIGenerate();
+  const quotationGenerate = useQuotationAIGenerate();
+  const generateMutation = isQuotation ? quotationGenerate : invoiceGenerate;
   const isGenerating = generateMutation.isPending;
+
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
 
@@ -83,17 +95,21 @@ export function AIChatMessage({
           context && Object.keys(context).length > 0 ? context : undefined,
       });
 
-      const invoiceId = result.data.invoice.id;
-      if (invoiceId) {
-        toast.success("Invoice created successfully!");
+      const docId = result.data.invoice.id;
+
+      if (isQuotation) {
+        toast.success("Quotation created successfully!");
         onClose?.();
-        navigate(`/invoice/${invoiceId}`);
+        if (docId) navigate(`/quotation/${docId}`);
+        else navigate("/quotations");
       } else {
         toast.success("Invoice created successfully!");
-        navigate("/invoices");
+        onClose?.();
+        if (docId) navigate(`/invoice/${docId}`);
+        else navigate("/invoices");
       }
     } catch (error: any) {
-      // toast.error(error.response?.data?.message || "Failed to create invoice");
+      // toast.error(...)
     }
   };
 
@@ -146,7 +162,7 @@ export function AIChatMessage({
     );
   }
 
-  // AI Error with Suggestions
+  // AI Error with Suggestions  (unchanged)
   if (message.error) {
     return (
       <>
@@ -201,7 +217,6 @@ export function AIChatMessage({
                           ),
                         )}
 
-                        {/* Separator */}
                         <div className="flex items-center gap-3 py-1">
                           <div className="flex-1 h-px bg-gray-200" />
                           <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
@@ -210,7 +225,6 @@ export function AIChatMessage({
                           <div className="flex-1 h-px bg-gray-200" />
                         </div>
 
-                        {/* Create new customer button */}
                         <button
                           onClick={() =>
                             goToCreateCustomer(message.error!.customerName!)
@@ -313,7 +327,6 @@ export function AIChatMessage({
           </div>
         </motion.div>
 
-        {/* New Customer Popup */}
         {showNewCustomer && (
           <PopupBottomRight
             isOpen={showNewCustomer}
@@ -345,9 +358,13 @@ export function AIChatMessage({
       >
         <div className="max-w-[90%] bg-white border border-gray-200 rounded-2xl rounded-bl-md overflow-hidden shadow-sm">
           <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100 flex items-center gap-2">
-            <TbFileInvoice size={14} className="text-blue-600" />
+            {isQuotation ? (
+              <TbFileDescription size={14} className="text-blue-600" />
+            ) : (
+              <TbFileInvoice size={14} className="text-blue-600" />
+            )}
             <span className="text-xs font-semibold text-gray-900">
-              Invoice Preview
+              {isQuotation ? "Quotation Preview" : "Invoice Preview"}
             </span>
           </div>
 
@@ -446,7 +463,11 @@ export function AIChatMessage({
               disabled={isGenerating}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-sm font-semibold text-white hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
             >
-              {isGenerating ? "Creating…" : "Confirm & Create Invoice"}
+              {isGenerating
+                ? "Creating…"
+                : isQuotation
+                  ? "Confirm & Create Quotation"
+                  : "Confirm & Create Invoice"}
             </button>
           </div>
         </div>

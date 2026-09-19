@@ -10,6 +10,7 @@ import { invoiceRouter } from "../modules/invoice/invoice.routes";
 import { paymentRouter } from "../modules/payment/payment.routes";
 import { dashboardRouter } from "../modules/dashboard/dashboard.route";
 import { notificationRouter } from "../modules/notification/notification.routes";
+import { invoiceAIRouter } from "src/modules/ai/invoiceAI.routes";
 
 const router = Router();
 
@@ -30,5 +31,7 @@ router.use("/invoice", invoiceRouter);
 router.use("/payment", paymentRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/notifications", notificationRouter);
+router.use("/invoice-ai", invoiceAIRouter);
+
 
 export default router;

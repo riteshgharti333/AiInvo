@@ -145,7 +145,7 @@ class EmailService {
         ? `Quotation_${data.invoiceNumber}.pdf`
         : `Invoice_${data.invoiceNumber}.pdf`;
 
-      const subject = `${data.invoiceNumber} - Invoice Ready`;
+      const subject = `${data.invoiceNumber} - AiInvo`;
 
       const html = `
         <!DOCTYPE html>
@@ -178,10 +178,10 @@ class EmailService {
               </div>
               <div class="amount">₹${isQuotation ? data.total : data.remainingBalance}</div>
               <p>Thank you for your business!</p>
-              <p>Invoice Ready Team</p>
+              <p>AiInvo Team</p>
             </div>
             <div class="footer">
-              <p>This email was sent from Invoice Ready.</p>
+              <p>This email was sent from AiInvo.</p>
             </div>
           </div>
         </body>

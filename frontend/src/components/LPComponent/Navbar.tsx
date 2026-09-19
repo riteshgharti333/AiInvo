@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  HiMenu,
-  HiX,
-  HiCode,
-  HiPlay,
-  HiExternalLink,
-} from "react-icons/hi";
+import { HiMenu, HiX, HiCode, HiPlay, HiExternalLink } from "react-icons/hi";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -79,14 +73,11 @@ const Navbar = () => {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
-              <div className="sm:flex flex-col">
-                <span className="text-xl md:text-[28px] font-extrabold tracking-tight leading-none bg-gradient-to-r from-brand via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Invoice Ready
-                </span>
-                <span className="text-[10px] block text-text-muted font-medium tracking-wide mt-0.5">
-                  Smart invoicing for modern businesses
-                </span>
-              </div>
+              <img
+                src="/logo.webp"
+                alt="AiInvo - AI-Powered Invoicing"
+                className="w-auto h-13 sm:h-11 md:h-16 object-contain"
+              />
             </motion.a>
 
             {/* Desktop Navigation */}

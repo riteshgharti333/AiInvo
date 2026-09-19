@@ -23,7 +23,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().email("SMTP_USER must be a valid email"),
   SMTP_PASS: z.string().min(1, "SMTP_PASS is required"),
-  SMTP_FROM: z.string().default("Invoice Ready <noreply@invoiceready.com>"),
+  SMTP_FROM: z.string().default("AiInvo <noreply@invoiceready.com>"),
 
   WHATSAPP_PHONE_NUMBER_ID: z
     .string()

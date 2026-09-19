@@ -1,17 +1,6 @@
 import type { InvoiceAIPreview, InvoiceContext } from "@invoice/shared/types";
 import axiosInstance from "../../utils/axios";
 
-/**
- * Fix vs the original: this file used to import InvoiceAIPreview and
- * InvoiceContext from "@invoice/shared/types" and then re-declare
- * `export interface InvoiceAIPreview { ... }` (and CustomerSuggestion,
- * AIAction, AIErrorDetails) three separate times further down the file -
- * a duplicate-identifier error that also conflicts directly with the
- * import. All type definitions now live in exactly one place
- * (@invoice/shared/types, see invoiceAI.types.ts) and this file only
- * imports them.
- */
-
 interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -29,14 +18,34 @@ export interface AIRequest {
   history?: ConversationTurn[];
 }
 
+// ─────────────────────────────────────────────────────────────
+// INVOICE (ADMIN) — /invoice-ai/*
+// ─────────────────────────────────────────────────────────────
+
 export const invoiceAIApi = {
   preview: (data: AIRequest) =>
     axiosInstance
-      .post<ApiResponse<InvoiceAIPreview>>("/invoice/test-parse", data)
+      .post<ApiResponse<InvoiceAIPreview>>("/invoice-ai/preview", data)
       .then((res) => res.data),
 
   generate: (data: AIRequest) =>
     axiosInstance
-      .post<ApiResponse<InvoiceAIPreview>>("/invoice/generate", data)
+      .post<ApiResponse<InvoiceAIPreview>>("/invoice-ai/generate", data)
+      .then((res) => res.data),
+};
+
+// ─────────────────────────────────────────────────────────────
+// QUOTATION (any user) — /invoice-ai/*
+// ─────────────────────────────────────────────────────────────
+
+export const quotationAIApi = {
+  preview: (data: AIRequest) =>
+    axiosInstance
+      .post<ApiResponse<InvoiceAIPreview>>("/invoice-ai/preview-quotation", data)
+      .then((res) => res.data),
+
+  generate: (data: AIRequest) =>
+    axiosInstance
+      .post<ApiResponse<InvoiceAIPreview>>("/invoice-ai/generate-quotation", data)
       .then((res) => res.data),
 };

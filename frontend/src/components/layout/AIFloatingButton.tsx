@@ -9,7 +9,7 @@ import {
   TbUser,
   TbBuildingBank,
   TbCalendar,
-  TbDiscount,
+  TbFileDescription,
 } from "react-icons/tb";
 import { AIChatMessage } from "./AIChatMessage";
 import { useInvoiceAIChat } from "../../utils/useAISuggestions";
@@ -18,8 +18,12 @@ const QUICK_SUGGESTIONS = [
   { icon: TbUser, text: "Invoice for Ritesh, website, 40% off" },
   { icon: TbBuildingBank, text: "Bill Acme Ltd for logo design" },
   {
+    icon: TbFileDescription,
+    text: "Quote Ritesh, Website UI/UX Design service",
+  },
+  {
     icon: TbCalendar,
-    text: "Invoice for Suresh, web development, due next week",
+    text: "Estimate for Suresh, web development, valid next week",
   },
 ];
 
@@ -73,7 +77,6 @@ export default function AIFloatingButton() {
 
   return (
     <>
-      {/* Floating Button */}
       <motion.button
         initial={{ scale: 0, rotate: -90 }}
         animate={{ scale: 1, rotate: 0 }}
@@ -81,7 +84,7 @@ export default function AIFloatingButton() {
         whileHover={{ scale: 1.08, rotate: 5 }}
         whileTap={{ scale: 0.92 }}
         onClick={() => setIsOpen(true)}
-        aria-label="Open AI invoice assistant"
+        aria-label="Open AI assistant"
         className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all cursor-pointer group focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/30 border border-white/20"
       >
         <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -105,7 +108,6 @@ export default function AIFloatingButton() {
         />
       </motion.button>
 
-      {/* Modal */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -124,7 +126,7 @@ export default function AIFloatingButton() {
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               role="dialog"
               aria-modal="true"
-              aria-label="AI invoice assistant"
+              aria-label="AI assistant"
               className="fixed bottom-24 right-4 md:bottom-28 md:right-8 z-50 w-[95vw] max-w-[450px] max-h-[80vh] md:max-h-[80vh] flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden"
             >
               {/* Header */}
@@ -146,10 +148,10 @@ export default function AIFloatingButton() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 leading-tight">
-                      Invoice Ready AI Assistant
+                      AI Assistant
                     </h3>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Describe → Preview → Create Invoice
+                      Describe → AI detects invoice or quotation → Confirm
                     </p>
                   </div>
                 </div>
@@ -191,7 +193,8 @@ export default function AIFloatingButton() {
                     <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-100">
                       <p className="text-xs text-gray-600 flex items-center gap-1">
                         <TbSparkles size={12} className="text-blue-600" />
-                        Powered by AI - Just describe what you need
+                        Say <strong>"invoice"</strong> or{" "}
+                        <strong>"quote"</strong> — AI picks the right one
                       </p>
                     </div>
                   </div>
@@ -214,14 +217,14 @@ export default function AIFloatingButton() {
 
               {/* Input */}
               <div className="p-4 border-t border-gray-100 bg-white shrink-0">
-                <div className="flex items-end gap-2">
+                <div className="flex justify-center items-center  gap-2">
                   <textarea
                     ref={inputRef}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder='Try: "Make invoice for Ritesh, website, 40% off"'
-                    rows={1}
+                    placeholder='Try: "Invoice for Ritesh, website" or "Quote Acme for logo"'
+                    rows={2}
                     className="flex-1 px-4 py-3 bg-gray-50 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 border-2 border-gray-200 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
                   />
                   <motion.button
